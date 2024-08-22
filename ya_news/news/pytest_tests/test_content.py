@@ -1,27 +1,23 @@
 from django.conf import settings
-from django.urls import reverse
 
 from news.forms import CommentForm
 
 
-def test_news_count(client, bulk_news):
-    response = client.get(reverse('news:home'))
-    object_list = response.context['object_list']
-    news_count = object_list.count()
+def test_news_count(client, bulk_news, all_urls):
+    response = client.get(all_urls['home_url'])
+    news_count = response.context['object_list'].count()
     assert news_count == settings.NEWS_COUNT_ON_HOME_PAGE
 
 
-def test_news_order(client, bulk_news):
-    response = client.get(reverse('news:home'))
-    object_list = response.context['object_list']
-    all_dates = [news.date for news in object_list]
+def test_news_order(client, bulk_news, all_urls):
+    response = client.get(all_urls['home_url'])
+    all_dates = [news.date for news in response.context['object_list']]
     sorted_dates = sorted(all_dates, reverse=True)
     assert all_dates == sorted_dates
 
 
-def test_comments_order(client, news_id, comments_bulk):
-    url = reverse('news:detail', args=news_id)
-    response = client.get(url)
+def test_comments_order(client, news, comments_bulk, all_urls):
+    response = client.get(all_urls['detail_url'])
     assert 'news' in response.context
     news = response.context['news']
     all_comments = news.comment_set.all()
@@ -30,14 +26,12 @@ def test_comments_order(client, news_id, comments_bulk):
     assert all_timestamps == sorted_timestamps
 
 
-def test_anonymous_client_has_no_form(client, news_id):
-    url = reverse('news:detail', args=news_id)
-    response = client.get(url)
+def test_anonymous_client_has_no_form(client, all_urls):
+    response = client.get(all_urls['detail_url'])
     assert 'form' not in response.context
 
 
-def test_authorized_client_has_form(author_client, news_id):
-    url = reverse('news:detail', args=news_id)
-    response = author_client.get(url)
+def test_authorized_client_has_form(author_client, all_urls):
+    response = author_client.get(all_urls['detail_url'])
     assert 'form' in response.context
     assert isinstance(response.context['form'], CommentForm)

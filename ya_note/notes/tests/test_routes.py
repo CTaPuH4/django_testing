@@ -1,80 +1,58 @@
 from http import HTTPStatus
 
-from django.contrib.auth import get_user_model
-from django.test import TestCase
-from django.urls import reverse
-
-from notes.models import Note
+from .fixtures import TestsFixture
 
 
-User = get_user_model()
-
-
-class TestRoutes(TestCase):
-
-    @classmethod
-    def setUpTestData(cls):
-        cls.author = User.objects.create(username='Author')
-        cls.reader = User.objects.create(username='Reader')
-        cls.note = Note.objects.create(
-            title='Заголовок',
-            text='Текст',
-            author=cls.author
-        )
-
+class TestRoutes(TestsFixture):
     def test_anonymous_pages_availability(self):
         urls = (
-            'notes:home',
-            'users:login',
-            'users:logout',
-            'users:signup',
+            self.home_url,
+            self.login_url,
+            self.logout_url,
+            self.signup_url,
         )
-        for name in urls:
-            with self.subTest(name=name):
-                url = reverse(name)
+        for url in urls:
+            with self.subTest(url=url):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_anonymous_pages_availability(self):
+    def test_pages_availability(self):
         urls = (
-            'notes:home',
-            'notes:list',
-            'notes:success',
-            'notes:add',
-            'users:login',
-            'users:logout',
-            'users:signup',
+            self.home_url,
+            self.list_url,
+            self.add_url,
+            self.success_url,
+            self.login_url,
+            self.logout_url,
+            self.signup_url,
         )
-        for name in urls:
-            with self.subTest(name=name):
-                url = reverse(name)
-                self.client.force_login(user=self.author)
-                response = self.client.get(url)
+        for url in urls:
+            with self.subTest(url=url):
+                response = self.author_client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_edit_and_delete_availability(self):
         users_statuses = (
-            (self.author, HTTPStatus.OK),
-            (self.reader, HTTPStatus.NOT_FOUND),
+            (self.author_client, HTTPStatus.OK),
+            (self.reader_client, HTTPStatus.NOT_FOUND),
         )
-        for user, status in users_statuses:
-            self.client.force_login(user)
-            for name in ('notes:edit', 'notes:delete', 'notes:detail'):
-                with self.subTest(user=user, name=name):
-                    url = reverse(name, args=(self.note.slug,))
-                    response = self.client.get(url)
+        for sub_client, status in users_statuses:
+            for url in (self.edit_url, self.delete_url, self.detail_url):
+                with self.subTest(sub_client=sub_client, url=url):
+                    response = sub_client.get(url)
                     self.assertEqual(response.status_code, status)
 
     def test_anonymous_client_redirect(self):
-        login_url = reverse('users:login')
-        dinamic_names = ('notes:edit', 'notes:delete', 'notes:detail')
-        static_names = ('notes:add', 'notes:list', 'notes:success')
-        for name in dinamic_names + static_names:
-            with self.subTest(name=name):
-                if name in static_names:
-                    url = reverse(name)
-                else:
-                    url = reverse(name, args=(self.note.slug,))
-                redirect_url = f'{login_url}?next={url}'
+        urls = (
+            self.list_url,
+            self.add_url,
+            self.success_url,
+            self.edit_url,
+            self.delete_url,
+            self.detail_url,
+        )
+        for url in urls:
+            with self.subTest(url=url):
+                redirect_url = f'{self.login_url}?next={url}'
                 response = self.client.get(url)
                 self.assertRedirects(response, redirect_url)
