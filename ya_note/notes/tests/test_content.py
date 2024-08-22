@@ -1,6 +1,5 @@
 from notes.forms import NoteForm
-
-from .fixtures import TestsFixture
+from notes.tests.fixtures import TestsFixture
 
 
 class TestContent(TestsFixture):

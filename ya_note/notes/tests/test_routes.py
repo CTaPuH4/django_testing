@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from .fixtures import TestsFixture
+from notes.tests.fixtures import TestsFixture
 
 
 class TestRoutes(TestsFixture):

@@ -2,9 +2,9 @@ from http import HTTPStatus
 
 from pytils.translit import slugify
 
-from .fixtures import TestsFixture
 from notes.forms import WARNING
 from notes.models import Note
+from notes.tests.fixtures import TestsFixture
 
 
 class TestLogic(TestsFixture):
@@ -74,7 +74,7 @@ class TestLogic(TestsFixture):
     def test_author_can_edit_note(self):
         response = self.author_client.post(self.edit_url, data=self.form_data)
         self.assertRedirects(response, self.success_url)
-        new_note = Note.objects.get(slug=self.note.slug)
+        new_note = Note.objects.get(pk=self.note.pk)
         self.assertEqual(new_note.title, self.form_data['title'])
         self.assertEqual(new_note.text, self.form_data['text'])
         self.assertEqual(new_note.author, self.author)
@@ -82,7 +82,7 @@ class TestLogic(TestsFixture):
     def test_user_cant_edit_note_of_another_user(self):
         response = self.reader_client.post(self.edit_url, data=self.form_data)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        new_note = Note.objects.get(slug=self.note.slug)
+        new_note = Note.objects.get(pk=self.note.pk)
         self.assertEqual(new_note.title, self.note.title)
         self.assertEqual(new_note.text, self.note.text)
         self.assertEqual(new_note.author, self.note.author)
